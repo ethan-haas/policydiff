@@ -1,0 +1,3 @@
+# policydiff-ins is stdlib-only. pytest is a dev/test dependency, not a
+# runtime dependency of the library or CLI.
+pytest>=7.0

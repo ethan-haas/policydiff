@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt
+      # Pinned so a test that starts SKIPPING for an unrelated reason -- a
+      # renamed fixture, a missing dependency -- fails the build instead of
+      # quietly draining coverage. A skip nobody counts is indistinguishable
+      # from a test that no longer runs. Update deliberately, in the same
+      # commit that changes what runs.
+      - name: Test suite, with the pass count pinned
+        run: |
+          set -o pipefail
+          python -m pytest tests/ -q | tee pytest.out
+          tail -1 pytest.out | grep -qE '^408 passed'             || { echo "expected '408 passed'; got: $(tail -1 pytest.out)"; exit 1; }
+      - run: python -m policydiff tests/fixtures/policy_old.txt tests/fixtures/policy_new_planted.txt --out diff.json
